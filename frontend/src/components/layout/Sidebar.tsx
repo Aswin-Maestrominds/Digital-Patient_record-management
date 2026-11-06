@@ -43,7 +43,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard' as NavigationPage, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'patients' as NavigationPage, label: 'Patients', icon: Users },
     { id: 'register' as NavigationPage, label: 'Register Patient', icon: UserPlus },
-    { id: 'record-detail' as NavigationPage, label: 'Medical Records', icon: FileText },
     { id: 'documents' as NavigationPage, label: 'Documents', icon: Files },
     { id: 'audit' as NavigationPage, label: 'Audit Logs', icon: ShieldCheck },
     { id: 'settings' as NavigationPage, label: 'Settings', icon: Settings },
