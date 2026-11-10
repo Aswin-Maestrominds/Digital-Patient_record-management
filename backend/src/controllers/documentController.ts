@@ -1,3 +1,4 @@
+import { User } from '../models/User';
 import { recordAudit } from '../services/auditService';
 import {
   listDocuments,
@@ -13,12 +14,12 @@ import { documentId, documentInput, documentQuery } from '../validators/schemas'
 
 export const getAllDocuments = asyncHandler(async (req, res) => {
   const query = documentQuery.parse(req.query);
-  const result = await listDocuments(req.auth!.userId, query);
+  const result = await listDocuments(req.auth!.workspaceId, query);
   await recordAudit(req, 'DOCUMENT_LIST', { patientId: query.patientId });
   res.json({ success: true, ...result });
 });
 export const getDocumentById = asyncHandler(async (req, res) => {
-  const document = await requireDocument(req.auth!.userId, documentId.parse(req.params.id));
+  const document = await requireDocument(req.auth!.workspaceId, documentId.parse(req.params.id));
   await recordAudit(req, 'DOCUMENT_METADATA_VIEW', {
     resourceId: document.id,
     patientId: document.patientId,
@@ -28,10 +29,15 @@ export const getDocumentById = asyncHandler(async (req, res) => {
 export const uploadDocument = asyncHandler(async (req, res) => {
   const data = documentInput.parse(req.body);
   if (!req.file) throw new HttpError(400, 'Attach one file using the file field.');
-  await requirePatient(req.auth!.userId, data.patientId);
+  await requirePatient(req.auth!.workspaceId, data.patientId);
   validateFile(req.file);
   await recordAudit(req, 'DOCUMENT_UPLOAD', { patientId: data.patientId, outcome: 'attempt' });
-  const document = await storeDocument(req.auth!.userId, data, req.file);
+  const document = await storeDocument(
+    req.auth!.workspaceId,
+    data,
+    req.file,
+    (await User.findById(req.auth!.userId))?.name,
+  );
   await recordAudit(req, 'DOCUMENT_UPLOAD', { patientId: data.patientId, resourceId: document.id });
   res.status(201).json({ success: true, document });
 });
@@ -39,14 +45,14 @@ export const uploadDocument = asyncHandler(async (req, res) => {
 const deliverDocument = (attachment: boolean) =>
   asyncHandler(async (req, res) => {
     const id = documentId.parse(req.params.id);
-    const metadata = await requireDocument(req.auth!.userId, id);
+    const metadata = await requireDocument(req.auth!.workspaceId, id);
     const action = attachment ? 'DOCUMENT_DOWNLOAD' : 'DOCUMENT_VIEW';
     await recordAudit(req, action, {
       resourceId: id,
       patientId: metadata.patientId,
       outcome: 'attempt',
     });
-    const { document, bytes } = await readDocument(req.auth!.userId, id);
+    const { document, bytes } = await readDocument(req.auth!.workspaceId, id);
     await recordAudit(req, action, { resourceId: id, patientId: document.patientId });
     const extension =
       document.mimeType === 'application/pdf'
@@ -67,10 +73,10 @@ export const viewDocument = deliverDocument(false);
 
 export const removeDocument = asyncHandler(async (req, res) => {
   const id = documentId.parse(req.params.id);
-  const document = await requireDocument(req.auth!.userId, id);
+  const document = await requireDocument(req.auth!.workspaceId, id);
   const details = { resourceId: id, patientId: document.patientId };
   await recordAudit(req, 'DOCUMENT_DELETE', { ...details, outcome: 'attempt' });
-  await deleteDocument(req.auth!.userId, id);
+  await deleteDocument(req.auth!.workspaceId, id);
   await recordAudit(req, 'DOCUMENT_DELETE', details);
   res.json({ success: true });
 });

@@ -1,3 +1,5 @@
+> **ARVI workspace update:** The application now supports administrators, doctors and medical staff. Existing installations must run `npm run workspace:migrate` once before using User Management. See [the backend walkthrough](docs/ARVI-redesign.md) for ownership, permissions, account endpoints, two-step verification, migration and testing. Earlier single-doctor setup notes below describe the original account/bootstrap flow.
+
 # MediVault backend
 
 Express + TypeScript + MongoDB API for one doctor. The code implements patient registration/search, patient profiles, private PDF/JPG/PNG uploads, document listing/viewing/downloading, doctor sessions, and persisted audit events.

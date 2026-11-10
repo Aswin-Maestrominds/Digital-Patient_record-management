@@ -23,6 +23,7 @@ const mongoose = require('mongoose');
     email: 'browser@medivault.test',
     passwordHash: await hashPassword('Synthetic browser test password!'),
     isDemo: true,
+    role: 'administrator',
   });
   for (let i = 0; i < 24; i++) {
     await registerPatient(String(doctor._id), {

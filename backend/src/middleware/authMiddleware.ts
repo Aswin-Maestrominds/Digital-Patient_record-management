@@ -28,6 +28,8 @@ export const authenticate = asyncHandler(async (req, _res, next) => {
     !user ||
     !user.active ||
     session.credentialVersion !== user.credentialVersion ||
+    Date.now() - new Date(session.lastActiveAt ?? session.createdAt).getTime() >
+      (user.preferences?.inactivityMinutes ?? 30) * 60000 ||
     (env.NODE_ENV === 'production' && user.isDemo)
   ) {
     await recordAudit(req, 'ACCESS_DENIED', { outcome: 'denied' });
@@ -35,9 +37,12 @@ export const authenticate = asyncHandler(async (req, _res, next) => {
   }
   req.auth = {
     userId: String(user._id),
+    workspaceId: String(user.workspaceId ?? user._id),
+    role: user.role,
     sessionId: String(session._id),
     csrfToken: session.csrfToken,
   };
+  await Session.updateOne({ _id: session._id }, { lastActiveAt: new Date() });
   next();
 });
 
@@ -58,3 +63,12 @@ export const requireCsrf: RequestHandler = asyncHandler(async (req, _res, next) 
   }
   next();
 });
+
+export const requireRoles = (...roles: string[]): RequestHandler =>
+  asyncHandler(async (req, _res, next) => {
+    if (!roles.includes(req.auth!.role)) {
+      await recordAudit(req, 'ACCESS_DENIED', { outcome: 'denied' });
+      throw new HttpError(403, 'Your role does not permit this action.');
+    }
+    next();
+  });

@@ -1,3 +1,4 @@
+import { requireRoles } from '../middleware/authMiddleware';
 import { Router } from 'express';
 import {
   getAllDocuments,
@@ -14,7 +15,7 @@ const router = Router();
 
 router.get('/', getAllDocuments);
 router.get('/:id', getDocumentById);
-router.delete('/:id', removeDocument);
+router.delete('/:id', requireRoles('administrator', 'doctor'), removeDocument);
 router.post('/upload', uploadLimiter, uploadClinicalDocument.single('file'), uploadDocument);
 router.get('/:id/download', downloadDocument);
 router.get('/:id/view', viewDocument);

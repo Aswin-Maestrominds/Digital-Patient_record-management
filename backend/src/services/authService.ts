@@ -16,29 +16,19 @@ export async function verifyDoctor(email: string, password: string) {
   )
     return null;
   if (!valid) {
-    const failed = await User.findByIdAndUpdate(
-      user._id,
-      { $inc: { failedLoginAttempts: 1 } },
-      { new: true },
-    );
-    if (failed && failed.failedLoginAttempts >= 5) {
-      await User.updateOne(
-        { _id: user._id },
-        { lockedUntil: new Date(Date.now() + 15 * 60 * 1000), failedLoginAttempts: 0 },
-      );
-    }
+    await recordFailedLogin(String(user._id));
     return null;
   }
-  await User.updateOne({ _id: user._id }, { failedLoginAttempts: 0, $unset: { lockedUntil: 1 } });
   return user;
 }
 
-export async function createSession(userId: string, credentialVersion: number) {
+export async function createSession(userId: string, credentialVersion: number, userAgent = '') {
   const token = randomBytes(32).toString('hex');
   const csrfToken = randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + env.SESSION_HOURS * 3600000);
   const session = await Session.create({
     userId,
+    userAgent: userAgent.slice(0, 500),
     tokenHash: sha256(token),
     csrfToken,
     expiresAt,
@@ -47,12 +37,41 @@ export async function createSession(userId: string, credentialVersion: number) {
   return { session, token, csrfToken, expiresAt };
 }
 
-export function publicUser(user: { _id: unknown; name: string; email: string; isDemo: boolean }) {
+export function publicUser(user: {
+  _id: unknown;
+  name: string;
+  email: string;
+  isDemo: boolean;
+  role: string;
+  phone?: string;
+  avatar?: string;
+  createdAt?: Date;
+  preferences?: unknown;
+  totpEnabled?: boolean;
+}) {
   return {
     id: String(user._id),
     name: user.name,
     email: user.email,
-    role: 'doctor',
+    role: user.role,
     isDemo: user.isDemo,
+    phone: user.phone,
+    avatar: user.avatar,
+    createdAt: user.createdAt,
+    preferences: user.preferences,
+    totpEnabled: user.totpEnabled,
   };
+}
+
+export async function recordFailedLogin(userId: string) {
+  const failed = await User.findByIdAndUpdate(
+    userId,
+    { $inc: { failedLoginAttempts: 1 } },
+    { new: true },
+  );
+  if (failed && failed.failedLoginAttempts >= 5)
+    await User.updateOne(
+      { _id: userId },
+      { $set: { lockedUntil: new Date(Date.now() + 15 * 60000), failedLoginAttempts: 0 } },
+    );
 }

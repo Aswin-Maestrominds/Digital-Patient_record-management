@@ -1,125 +1,145 @@
-import React from 'react';
-import { 
-  LayoutDashboard, 
-  Users, 
-  UserPlus, 
-  FileText, 
-  Files, 
-  ShieldCheck, 
-  Settings, 
-  LogOut,
-  Cross,
-  X
-} from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import React from "react";
 
-export type NavigationPage = 
-  | 'dashboard'
-  | 'patients'
-  | 'register'
-  | 'record-detail'
-  | 'documents'
-  | 'upload-doc'
-  | 'doc-viewer'
-  | 'audit'
-  | 'settings';
+import {
+  LayoutDashboard,
+  Users,
+  Files,
+  ClipboardList,
+  Settings,
+  LogOut,
+  X,
+  ChevronDown,
+  UserRoundCog,
+} from "lucide-react";
+
+import { useAuth } from "../../context/AuthContext";
+
+import { initials } from "../../utils/display";
+
+import { roleLabel } from "../../api/types";
+
+import logo from "../../assets/arvi-logo.png";
+
+export type NavigationPage =
+  | "dashboard"
+  | "patients"
+  | "register"
+  | "record-detail"
+  | "documents"
+  | "upload-doc"
+  | "doc-viewer"
+  | "audit"
+  | "settings"
+  | "users";
 
 interface SidebarProps {
   currentPage: NavigationPage;
-  onNavigate: (page: NavigationPage, patientId?: string, docId?: string) => void;
+  onNavigate: (
+    page: NavigationPage,
+    patientId?: string,
+    docId?: string,
+  ) => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
-  currentPage, 
-  onNavigate, 
-  isOpenMobile = false, 
-  onCloseMobile 
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentPage,
+  onNavigate,
+  isOpenMobile,
+  onCloseMobile,
 }) => {
-  const { logout } = useAuth();
+  const { currentUser, logout } = useAuth();
 
-  const navItems = [
-    { id: 'dashboard' as NavigationPage, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'patients' as NavigationPage, label: 'Patients', icon: Users },
-    { id: 'register' as NavigationPage, label: 'Register Patient', icon: UserPlus },
-    { id: 'documents' as NavigationPage, label: 'Documents', icon: Files },
-    { id: 'audit' as NavigationPage, label: 'Audit Logs', icon: ShieldCheck },
-    { id: 'settings' as NavigationPage, label: 'Settings', icon: Settings },
+  const navigate = (page: NavigationPage) => {
+    onNavigate(page);
+    onCloseMobile?.();
+  };
+
+  const groups = [
+    {
+      label: "WORKSPACE",
+      items: [
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { id: "patients", label: "Patients", icon: Users },
+        { id: "documents", label: "Medical Documents", icon: Files },
+      ],
+    },
+
+    {
+      label: "ADMINISTRATION",
+      items: [
+        { id: "users", label: "User Management", icon: UserRoundCog },
+        { id: "audit", label: "Audit Logs", icon: ClipboardList },
+        { id: "settings", label: "Settings", icon: Settings },
+      ],
+    },
   ];
 
-  const handleItemClick = (pageId: NavigationPage) => {
-    onNavigate(pageId);
-    if (onCloseMobile) onCloseMobile();
-  };
+  const active = ["register", "record-detail"].includes(currentPage)
+    ? "patients"
+    : ["upload-doc", "doc-viewer"].includes(currentPage)
+      ? "documents"
+      : currentPage;
 
-  const handleLogout = () => {
-    if (onCloseMobile) onCloseMobile();
-    logout();
-  };
-
-  const sidebarContent = (
-    <div className="flex flex-col justify-between h-full bg-white select-none">
-      <div>
-        {/* Brand Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
-              <Cross className="w-5 h-5 fill-current" />
-            </div>
-            <div>
-              <div className="font-bold text-slate-900 tracking-tight text-lg leading-tight">MediVault</div>
-              <div className="text-[11px] font-medium text-slate-400 tracking-wide">Patient Records</div>
-            </div>
-          </div>
-
-          {/* Close button for mobile drawer */}
-          {onCloseMobile && (
-            <button
-              onClick={onCloseMobile}
-              className="lg:hidden p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Close menu"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-
-        {/* Navigation Menu */}
-        <nav className="p-3 space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = 
-              currentPage === item.id || 
-              (item.id === 'record-detail' && (currentPage === 'record-detail' || currentPage === 'upload-doc' || currentPage === 'doc-viewer')) ||
-              (item.id === 'documents' && currentPage === 'documents');
-
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleItemClick(item.id)}
-                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
-              >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                <span className="truncate">{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+  const content = (
+    <div className="arvi-sidebar">
+      <div className="sidebar-brand">
+        <img src={logo} alt="ARVI Healthcare Intelligence" />
+        <button
+          className="lg:hidden"
+          aria-label="Close menu"
+          onClick={onCloseMobile}
+        >
+          <X size={20} />
+        </button>
       </div>
 
-      {/* Logout Footer */}
-      <div className="p-4 border-t border-slate-100">
+      <nav aria-label="Main navigation">
+        {groups.map((group) => (
+          <div className="nav-group" key={group.label}>
+            <p>{group.label}</p>
+            {group.items
+              .filter(
+                (item) =>
+                  item.id !== "users" || currentUser?.role === "administrator",
+              )
+              .map((item) => (
+                <button
+                  key={item.id}
+                  aria-current={active === item.id ? "page" : undefined}
+                  className={`nav-link ${active === item.id ? "active" : ""}`}
+                  onClick={() => navigate(item.id as NavigationPage)}
+                >
+                  <item.icon size={19} strokeWidth={1.6} />
+                  {item.label}
+                </button>
+              ))}
+          </div>
+        ))}
+      </nav>
+
+      <div className="sidebar-account">
         <button
-          onClick={handleLogout}
-          className="w-full flex items-center space-x-3 px-3 py-2.5 text-sm font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+          className="flex items-center gap-3 flex-1 text-left"
+          onClick={() => navigate("settings")}
         >
-          <LogOut className="w-4 h-4 shrink-0" />
-          <span>Logout</span>
+          <span className="avatar">{initials(currentUser!.name)}</span>
+          <span>
+            <strong className="block text-[13px]">{currentUser!.name}</strong>
+            <span className="text-xs text-slate-500">
+              {roleLabel(currentUser?.role)}
+            </span>
+          </span>
+          <ChevronDown size={14} className="ml-auto" />
+        </button>
+        <button
+          className="logout-button"
+          title="Sign out"
+          aria-label="Sign out"
+          onClick={() => void logout()}
+        >
+          <LogOut size={16} />
         </button>
       </div>
     </div>
@@ -127,24 +147,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Desktop & Laptop docked sidebar */}
-      <aside className="hidden lg:block w-64 bg-white border-r border-slate-200 h-screen sticky top-0 z-30 shrink-0">
-        {sidebarContent}
+      <aside className="hidden lg:block w-[240px] h-screen sticky top-0 shrink-0 z-30 border-r border-slate-200">
+        {content}
       </aside>
-
-      {/* Mobile & Tablet Drawer Modal */}
       {isOpenMobile && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop */}
-          <div 
-            onClick={onCloseMobile} 
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+          <button
+            aria-label="Close navigation"
+            className="absolute inset-0 bg-slate-900/40"
+            onClick={onCloseMobile}
           />
-
-          {/* Drawer content */}
-          <div className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white shadow-2xl z-50 transform transition-transform animate-in slide-in-from-left duration-200">
-            {sidebarContent}
-          </div>
+          <aside className="absolute inset-y-0 left-0 w-[260px] shadow-xl">
+            {content}
+          </aside>
         </div>
       )}
     </>

@@ -6,7 +6,8 @@ import { MedicalDocument } from '../models/MedicalDocument';
 import { getStorage } from '../storage';
 import { decryptDocument, encryptDocument, sha256 } from './encryptionService';
 import { requirePatient } from './patientService';
-import { HttpError } from '../utils/http';
+import { Patient } from '../models/Patient';
+import { HttpError, escapeRegex } from '../utils/http';
 import { documentInput, documentQuery } from '../validators/schemas';
 
 export function validateFile(file: Express.Multer.File): void {
@@ -33,8 +34,23 @@ export function validateFile(file: Express.Multer.File): void {
 export async function listDocuments(doctorId: string, query: z.infer<typeof documentQuery>) {
   if (query.patientId) await requirePatient(doctorId, query.patientId);
   const { page, limit, patientId, category, from, to } = query;
+  const matchedPatients = query.search
+    ? await Patient.find({ doctorId, name: new RegExp(escapeRegex(query.search), 'i') })
+        .select('id')
+        .lean()
+    : [];
   const filter = {
     doctorId,
+    ...(query.search
+      ? {
+          $or: [
+            { title: new RegExp(escapeRegex(query.search), 'i') },
+            { patientId: new RegExp(escapeRegex(query.search), 'i') },
+            { patientId: { $in: matchedPatients.map((p) => p.id) } },
+          ],
+        }
+      : {}),
+    ...(query.mimeType ? { mimeType: query.mimeType } : {}),
     ...(patientId ? { patientId } : {}),
     ...(category ? { category } : {}),
     ...(from || to
@@ -44,13 +60,28 @@ export async function listDocuments(doctorId: string, query: z.infer<typeof docu
   const [documents, total] = await Promise.all([
     MedicalDocument.find(filter)
       .select('-_id -__v -doctorId')
-      .sort({ reportDate: -1, uploadedAt: -1, id: -1 })
+      .sort(
+        query.sort === 'uploaded'
+          ? { uploadedAt: -1, id: -1 }
+          : { reportDate: -1, uploadedAt: -1, id: -1 },
+      )
       .skip((page - 1) * limit)
       .limit(limit)
       .lean(),
     MedicalDocument.countDocuments(filter),
   ]);
-  return { documents, total, page, limit };
+  const names = await Patient.find({ doctorId, id: { $in: documents.map((d) => d.patientId) } })
+    .select('id name')
+    .lean();
+  return {
+    documents: documents.map((d) => ({
+      ...d,
+      patientName: names.find((p) => p.id === d.patientId)?.name,
+    })),
+    total,
+    page,
+    limit,
+  };
 }
 
 export async function requireDocument(doctorId: string, id: string) {
@@ -65,6 +96,7 @@ export async function storeDocument(
   doctorId: string,
   data: z.infer<typeof documentInput>,
   file: Express.Multer.File,
+  uploadedBy?: string,
 ) {
   await requirePatient(doctorId, data.patientId);
   validateFile(file);
@@ -76,6 +108,7 @@ export async function storeDocument(
     await storage.put(storageKey, encrypted);
     await MedicalDocument.create({
       ...data,
+      uploadedBy,
       id,
       doctorId,
       storageProvider: env.STORAGE_PROVIDER,

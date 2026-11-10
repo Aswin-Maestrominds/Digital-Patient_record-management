@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { configureDisplay } from "../utils/display";
+
+import React, { createContext, useContext, useEffect, useState } from "react";
+
 import {
   api,
   ApiError,
@@ -6,35 +9,59 @@ import {
   errorMessage,
   SESSION_EXPIRED,
   setCsrfToken,
-} from '../api/client';
-import { Doctor } from '../api/types';
+} from "../api/client";
+
+import { Doctor } from "../api/types";
 
 interface AuthState {
   currentUser: Doctor | null;
+
   isAuthenticated: boolean;
+
   loading: boolean;
+
   error: string;
-  login: (email: string, password: string) => Promise<void>;
+
+  login: (
+    email: string,
+    password: string,
+    code?: string,
+    remember?: boolean,
+  ) => Promise<void>;
+
   logout: () => Promise<void>;
+
   retrySession: () => void;
+
+  updateUser: (user: Doctor) => void;
 }
+
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<Doctor | null>(null);
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+
+  const [error, setError] = useState("");
+
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     // Remove obsolete prototype caches, including the old default-login flag.
+
     [
-      'medivault_auth_session',
-      'medivault_user_profile',
-      'medivault_patients_db',
-      'medivault_documents_db',
-      'medivault_audits_db',
-      'medivault_sessions_db',
+      "medivault_auth_session",
+
+      "medivault_user_profile",
+
+      "medivault_patients_db",
+
+      "medivault_documents_db",
+
+      "medivault_audits_db",
+
+      "medivault_sessions_db",
     ].forEach((key) => {
       try {
         localStorage.removeItem(key);
@@ -42,74 +69,126 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         /* Storage may be disabled. */
       }
     });
+
     const expire = () => {
       setCurrentUser(null);
-      setError('Your session has expired. Please sign in again.');
+
+      setError("Your session has expired. Please sign in again.");
     };
+
     window.addEventListener(SESSION_EXPIRED, expire);
+
     return () => window.removeEventListener(SESSION_EXPIRED, expire);
   }, []);
 
   useEffect(() => {
     const controller = new AbortController();
+
     setLoading(true);
-    setError('');
-    api<{ user: Doctor; csrfToken: string }>('/auth/me', { signal: controller.signal })
+
+    setError("");
+
+    api<{ user: Doctor; csrfToken: string }>("/auth/me", {
+      signal: controller.signal,
+    })
       .then((result) => {
         if (!controller.signal.aborted) {
           setCsrfToken(result.csrfToken);
+
           setCurrentUser(result.user);
         }
       })
+
       .catch((error) => {
-        if (!controller.signal.aborted && error.name !== 'AbortError') {
+        if (!controller.signal.aborted && error.name !== "AbortError") {
           clearSession();
+
           setCurrentUser(null);
-          if (!(error instanceof ApiError && error.status === 401)) setError(errorMessage(error));
+
+          if (!(error instanceof ApiError && error.status === 401))
+            setError(errorMessage(error));
         }
       })
+
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
+
     return () => controller.abort();
   }, [retry]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (
+    email: string,
+    password: string,
+    code?: string,
+    remember?: boolean,
+  ) => {
     clearSession();
-    const result = await api<{ user: Doctor; csrfToken: string }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+
+    const result = await api<{ user: Doctor; csrfToken: string }>(
+      "/auth/login",
+      {
+        method: "POST",
+
+        body: JSON.stringify({
+          email,
+          password,
+          ...(code ? { code } : {}),
+          remember,
+        }),
+      },
+    );
+
     setCsrfToken(result.csrfToken);
+
     setCurrentUser(result.user);
-    setError('');
+
+    setError("");
   };
+
   const logout = async () => {
     try {
-      await api('/auth/logout', { method: 'POST' });
+      await api("/auth/logout", { method: "POST" });
+
       clearSession();
+
       setCurrentUser(null);
-      setError('');
+
+      setError("");
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         clearSession();
+
         setCurrentUser(null);
+
         return;
       }
+
       // Do not pretend the server revoked a session when it could not be reached.
-      setError('Could not sign out. Please try again.');
+
+      setError("Could not sign out. Please try again.");
     }
   };
+
+  configureDisplay(currentUser?.preferences);
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
+
+        updateUser: setCurrentUser,
+
         isAuthenticated: !!currentUser,
+
         loading,
+
         error,
+
         login,
+
         logout,
+
         retrySession: () => setRetry((value) => value + 1),
       }}
     >
@@ -117,8 +196,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('AuthProvider is required.');
+
+  if (!context) throw new Error("AuthProvider is required.");
+
   return context;
 }

@@ -21,6 +21,8 @@ export async function listPatients(doctorId: string, query: z.infer<typeof patie
   const { search, page, limit } = query;
   const filter = {
     doctorId,
+    ...(query.gender ? { gender: query.gender } : {}),
+    ...(query.from ? { createdAt: { $gte: new Date(query.from) } } : {}),
     ...(search
       ? {
           $or: [

@@ -84,7 +84,13 @@ export const pagination = z.object({
   page: z.coerce.number().int().positive().max(100000).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
-export const patientQuery = pagination.extend({ search: text(100).optional() }).strict();
+export const patientQuery = pagination
+  .extend({
+    search: text(100).optional(),
+    gender: z.enum(['Male', 'Female', 'Other']).optional(),
+    from: calendarDate.optional(),
+  })
+  .strict();
 export const patientId = z.string().regex(/^PT-\d{4}-\d{3,}$/);
 export const documentId = z.string().regex(/^DOC-[a-f\d-]{36}$/);
 export const documentInput = z
@@ -99,6 +105,9 @@ export const documentInput = z
   .strict();
 export const documentQuery = pagination
   .extend({
+    search: text(100).optional(),
+    sort: z.enum(['uploaded', 'report']).optional(),
+    mimeType: z.enum(['application/pdf', 'image/jpeg', 'image/png']).optional(),
     patientId: patientId.optional(),
     category: z.enum(DOCUMENT_CATEGORIES).optional(),
     from: calendarDate.optional(),
@@ -115,8 +124,21 @@ export const loginInput = z
       .max(254)
       .transform((v) => v.toLowerCase()),
     password: z.string().min(1).max(128),
+    code: z
+      .string()
+      .regex(/^\d{6}$/)
+      .optional(),
+    remember: z.boolean().optional(),
   })
   .strict();
 export const auditQuery = pagination
-  .extend({ action: text(80).optional(), patientId: patientId.optional() })
+  .extend({
+    activityOnly: z.enum(['true']).optional(),
+    action: text(80).optional(),
+    patientId: patientId.optional(),
+    search: text(100).optional(),
+    outcome: z.enum(['success', 'denied', 'attempt']).optional(),
+    from: calendarDate.optional(),
+    to: calendarDate.optional(),
+  })
   .strict();

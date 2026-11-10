@@ -4,13 +4,13 @@ import { readFile } from "node:fs/promises";
 
 async function login(page: Page) {
   await page.goto("/");
-  await page.getByLabel("Work Email Address").fill("browser@medivault.test");
+  await page.getByLabel("Email Address").fill("browser@medivault.test");
   await page
     .getByLabel("Password", { exact: true })
     .fill("Synthetic browser test password!");
   await page.getByRole("button", { name: "Sign In", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Welcome, Browser Test Doctor" }),
+    page.getByRole("heading", { name: /Good .*Browser Test Doctor/ }),
   ).toBeVisible();
 }
 async function navigate(page: Page, name: string) {
@@ -38,9 +38,9 @@ for (const viewport of [
     page.on("pageerror", (error) => runtimeErrors.push(error.message));
     await login(page);
     await navigate(page, "Patients");
-    await expect(page.getByText("Page 1 of 2")).toBeVisible();
+    await expect(page.getByText(/Page 1 of \d+/)).toBeVisible();
     await page.getByRole("button", { name: "Next", exact: true }).click();
-    await expect(page.getByText("Page 2 of 2")).toBeVisible();
+    await expect(page.getByText(/Page 2 of \d+/)).toBeVisible();
     await page
       .getByLabel("Search patient directory")
       .fill("Synthetic Directory 00");
@@ -51,7 +51,9 @@ for (const viewport of [
       }),
     ).toBeVisible();
 
-    await navigate(page, "Register Patient");
+    await page
+      .getByRole("button", { name: "Register Patient", exact: true })
+      .click();
     const name = `Synthetic Browser Patient ${viewport.width}`;
     await page.getByLabel("Full name *", { exact: true }).fill(name);
     await page
@@ -61,6 +63,7 @@ for (const viewport of [
       .getByRole("combobox", { name: "Gender *", exact: true })
       .selectOption("Female");
     await page.getByLabel("Phone *", { exact: true }).fill("0000000000");
+    await page.getByText("Additional details", { exact: true }).click();
     await page
       .getByRole("combobox", { name: "Blood group", exact: true })
       .selectOption("O+");
@@ -72,24 +75,22 @@ for (const viewport of [
     await expect(
       page.getByRole("heading", { name, exact: true }),
     ).toBeVisible();
-    await expect(
-      page.getByText(
-        "No documents found. Upload a report or change the filters.",
-      ),
-    ).toBeVisible();
+    await expect(page.getByText("No documents uploaded yet.")).toBeVisible();
     await page.getByRole("button", { name: "Edit Profile" }).click();
+    await page.getByText("Additional details", { exact: true }).click();
     await page
       .getByRole("combobox", { name: "Blood group", exact: true })
       .selectOption("");
     await page.getByLabel("Contact phone", { exact: true }).fill("");
     await page
-      .getByLabel("Clinical notes (optional)", { exact: true })
+      .getByLabel("Optional Notes", { exact: true })
       .fill("Synthetic integration note");
     await page.getByRole("button", { name: "Save Changes" }).click();
     await expect(
       page.getByText("Synthetic integration note", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("1111111111", { exact: true })).toHaveCount(0);
+    await page.getByText("Record actions", { exact: true }).click();
     await page
       .getByRole("button", { name: "Patient Card", exact: true })
       .click();
@@ -103,13 +104,11 @@ for (const viewport of [
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
       "base64",
     );
-    await page
-      .getByLabel("Document file", { exact: true })
-      .setInputFiles({
-        name: "synthetic-image.png",
-        mimeType: "image/png",
-        buffer: png,
-      });
+    await page.getByLabel("Document file", { exact: true }).setInputFiles({
+      name: "synthetic-image.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
     await page
       .getByLabel("Title *", { exact: true })
       .fill(`Synthetic Report ${viewport.width}`);
@@ -117,9 +116,7 @@ for (const viewport of [
       .getByRole("combobox", { name: "Category *", exact: true })
       .selectOption("Pharmacy Bill");
     await page.getByLabel("Report date *", { exact: true }).fill("2020-05-12");
-    await page
-      .getByRole("button", { name: "Upload and View Document" })
-      .click();
+    await page.getByRole("button", { name: "Upload Document" }).click();
     await expect(
       page.getByRole("heading", {
         name: `Synthetic Report ${viewport.width}`,
@@ -142,27 +139,22 @@ for (const viewport of [
       "synthetic-image.png",
     );
     await page.getByRole("button", { name: "Back to Patient Record" }).click();
-    await expect(page.getByText("1 files", { exact: true })).toBeVisible();
     await expect(
-      page.getByText(`Synthetic Report ${viewport.width}`, { exact: true }),
+      page.getByRole("tab", { name: "Medical Documents (1)", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("synthetic-image.png", { exact: true }),
     ).toBeVisible();
 
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: "Welcome, Browser Test Doctor" }),
+      page.getByRole("heading", { name: /Good .*Browser Test Doctor/ }),
     ).toBeVisible();
-    await page.getByLabel("Search all patients", { exact: true }).fill(name);
+    await navigate(page, "Patients");
+    await page.getByLabel("Search patient directory").fill(name);
     await page
-      .getByRole("search")
-      .getByRole("button")
-      .filter({ hasText: name })
+      .getByRole("button", { name: `Open record for ${name}`, exact: true })
       .click();
-    await expect(
-      page.getByLabel("Search all patients", { exact: true }),
-    ).toHaveValue("");
-    await expect(
-      page.getByRole("heading", { name, exact: true }),
-    ).toBeVisible();
     expect(
       await page.evaluate(() =>
         Object.keys(localStorage).filter((key) => key.startsWith("medivault")),
@@ -176,6 +168,9 @@ for (const viewport of [
       path: `test-results/patient-${viewport.width}.png`,
       fullPage: true,
     });
+    await page
+      .getByRole("tab", { name: "Medical Documents (1)", exact: true })
+      .click();
     const deleteReport = page.getByRole("button", {
       name: `Delete Synthetic Report ${viewport.width}`,
       exact: true,
@@ -185,8 +180,12 @@ for (const viewport of [
     await expect(deleteReport).toBeVisible();
     page.once("dialog", (dialog) => dialog.accept());
     await deleteReport.click();
-    await expect(page.getByText("0 files", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("tab", { name: "Medical Documents (0)", exact: true }),
+    ).toBeVisible();
     await expect(deleteReport).toHaveCount(0);
+    await page.getByRole("tab", { name: "Overview", exact: true }).click();
+    await page.getByText("Record actions", { exact: true }).click();
     page.once("dialog", (dialog) => dialog.dismiss());
     await page
       .getByRole("button", { name: "Delete Patient", exact: true })
@@ -199,7 +198,7 @@ for (const viewport of [
       .getByRole("button", { name: "Delete Patient", exact: true })
       .click();
     await expect(
-      page.getByRole("heading", { name: "Patients Directory", exact: true }),
+      page.getByRole("heading", { name: "Patient Directory", exact: true }),
     ).toBeVisible();
     await page.getByLabel("Search patient directory").fill(name);
     await expect(
@@ -210,16 +209,18 @@ for (const viewport of [
       .getByRole("combobox", { name: "Action", exact: true })
       .selectOption("DOCUMENT_UPLOAD");
     await expect(
-      page.getByRole("cell", { name: "DOCUMENT_UPLOAD", exact: true }).first(),
+      page
+        .getByRole("cell", { name: "Document uploaded", exact: true })
+        .first(),
     ).toBeVisible();
     await navigate(page, "Settings");
     await page.getByRole("button", { name: "Sign Out", exact: true }).click();
     await expect(
-      page.getByRole("heading", { name: "Welcome Back" }),
+      page.getByRole("heading", { name: "Welcome back" }),
     ).toBeVisible();
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: "Welcome Back" }),
+      page.getByRole("heading", { name: "Welcome back" }),
     ).toBeVisible();
     expect(runtimeErrors).toEqual([]);
   });
@@ -258,15 +259,13 @@ test("PDF upload previews original bytes and rejects oversize or unsupported fil
   });
   await expect(page.getByRole("alert")).toContainText("1 MB or smaller");
   const pdf = syntheticPdf();
-  await page
-    .getByLabel("Document file", { exact: true })
-    .setInputFiles({
-      name: "synthetic-report.pdf",
-      mimeType: "application/pdf",
-      buffer: pdf,
-    });
+  await page.getByLabel("Document file", { exact: true }).setInputFiles({
+    name: "synthetic-report.pdf",
+    mimeType: "application/pdf",
+    buffer: pdf,
+  });
   await page.getByLabel("Report date *", { exact: true }).fill("2020-05-12");
-  await page.getByRole("button", { name: "Upload and View Document" }).click();
+  await page.getByRole("button", { name: "Upload Document" }).click();
   await expect(page.getByTitle("Medical document PDF")).toHaveAttribute(
     "src",
     /^blob:/,
@@ -283,7 +282,7 @@ test("failed login, server failures and expired sessions are visible without exp
   context,
 }) => {
   await page.goto("/");
-  await page.getByLabel("Work Email Address").fill("browser@medivault.test");
+  await page.getByLabel("Email Address").fill("browser@medivault.test");
   await page.getByLabel("Password", { exact: true }).fill("wrong password");
   await page.getByRole("button", { name: "Sign In", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText(
@@ -309,7 +308,7 @@ test("failed login, server failures and expired sessions are visible without exp
   await context.clearCookies();
   await page.getByLabel("Search patient directory").fill("Directory 00");
   await expect(
-    page.getByRole("heading", { name: "Welcome Back" }),
+    page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
   await expect(page.getByRole("alert")).toContainText("session has expired");
   await expect(

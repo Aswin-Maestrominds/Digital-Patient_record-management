@@ -45,7 +45,7 @@ export function createApp(): Application {
     }),
   );
   app.use('/api', apiLimiter);
-  app.use(express.json({ limit: '64kb' }));
+  app.use(express.json({ limit: '192kb' }));
   app.use(cookieParser());
   app.get('/health', (_req, res) => {
     const ready = mongoose.connection.readyState === 1;

@@ -1,3 +1,4 @@
+import { requireRoles } from '../middleware/authMiddleware';
 import { Router } from 'express';
 import {
   getAllPatients,
@@ -13,6 +14,6 @@ router.get('/', getAllPatients);
 router.get('/:id', getPatientById);
 router.post('/', createPatient);
 router.patch('/:id', updatePatient);
-router.delete('/:id', removePatient);
+router.delete('/:id', requireRoles('administrator', 'doctor'), removePatient);
 
 export default router;

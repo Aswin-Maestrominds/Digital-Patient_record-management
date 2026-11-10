@@ -37,6 +37,7 @@ async function setup(): Promise<void> {
     email: input.data.DOCTOR_EMAIL,
     passwordHash: await hashPassword(input.data.DOCTOR_PASSWORD),
     isDemo: false,
+    role: 'administrator',
     active: true,
     failedLoginAttempts: 0,
     lockedUntil: null,

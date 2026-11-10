@@ -21,6 +21,7 @@ async function seed(): Promise<void> {
       name: 'Demo Doctor',
       email: 'doctor@medivault.test',
       isDemo: true,
+      role: 'administrator',
       passwordHash: await hashPassword(password),
     });
     console.info(`Demo email: doctor@medivault.test\nOne-time password output: ${password}`);

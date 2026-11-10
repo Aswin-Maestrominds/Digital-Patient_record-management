@@ -12,6 +12,8 @@ const documentSchema = new Schema(
   {
     id: { type: String, required: true, unique: true },
     doctorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    uploadedBy: String,
+    patientName: String,
     patientId: { type: String, required: true },
     title: { type: String, required: true },
     category: { type: String, enum: DOCUMENT_CATEGORIES, required: true },

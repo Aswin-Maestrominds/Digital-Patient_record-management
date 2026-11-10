@@ -3,6 +3,9 @@ import { Schema, model } from 'mongoose';
 // this collection against privileged changes; this is not an immutable ledger.
 const auditSchema = new Schema(
   {
+    workspaceId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    actorName: String,
+    actorRole: String,
     actorId: { type: Schema.Types.ObjectId, ref: 'User' },
     action: { type: String, required: true },
     resourceId: String,
