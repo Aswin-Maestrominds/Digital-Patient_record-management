@@ -195,7 +195,7 @@ export function PatientsDirectoryPage({
               ))}
             </div>
           ) : (
-            <div className="panel overflow-x-auto">
+            <div role="region" aria-label="Patient directory" tabIndex={0} className="table-scroll panel overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-slate-50 text-xs uppercase text-slate-400">
                   <tr>

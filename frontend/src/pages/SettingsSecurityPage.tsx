@@ -248,7 +248,7 @@ export function SettingsSecurityPage(_props: {
       <fieldset disabled={busy} className="settings-grid">
         <section className="panel">
           <h2>My Profile</h2>
-          <div className="flex items-center gap-3 mb-7">
+          <div className="settings-profile-identity flex flex-wrap items-center gap-3 mb-7">
             <span className="avatar !w-14 !h-14 !text-xl">
               {profile.avatar ? (
                 <img

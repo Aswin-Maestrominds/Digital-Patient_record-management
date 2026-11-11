@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 import {
   LayoutDashboard,
@@ -50,8 +50,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
 }) => {
   const { currentUser, logout } = useAuth();
+  const drawer = useRef<HTMLElement>(null);
+  const restoreScroll = useRef(true);
+  useEffect(() => {
+    if (!isOpenMobile) return;
+    restoreScroll.current = true;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const scrollY = window.scrollY;
+    const previous = { position: document.body.style.position, top: document.body.style.top, width: document.body.style.width };
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    drawer.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onCloseMobile?.();
+      if (event.key !== 'Tab') return;
+      const buttons = drawer.current?.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
+      if (!buttons?.length) return;
+      const first = buttons[0], last = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const closeOnDesktop = () => { if (desktop.matches) onCloseMobile?.(); };
+    document.addEventListener('keydown', keydown);
+    desktop.addEventListener('change', closeOnDesktop);
+    return () => {
+      document.removeEventListener('keydown', keydown);
+      desktop.removeEventListener('change', closeOnDesktop);
+      Object.assign(document.body.style, previous);
+      window.scrollTo({ top: restoreScroll.current ? scrollY : 0, behavior: 'instant' });
+      previousFocus?.focus({ preventScroll: true });
+    };
+  }, [isOpenMobile, onCloseMobile]);
 
   const navigate = (page: NavigationPage) => {
+    restoreScroll.current = false;
     onNavigate(page);
     onCloseMobile?.();
   };
@@ -157,7 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="absolute inset-0 bg-slate-900/40"
             onClick={onCloseMobile}
           />
-          <aside className="absolute inset-y-0 left-0 w-[260px] shadow-xl">
+          <aside ref={drawer} role="dialog" aria-modal="true" aria-label="Navigation menu" className="mobile-drawer absolute inset-y-0 left-0 w-[280px] max-w-[90vw] shadow-xl">
             {content}
           </aside>
         </div>

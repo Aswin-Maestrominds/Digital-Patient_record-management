@@ -176,7 +176,7 @@ export function PatientRegistrationPage({
             <div className="space-y-6">
               <section className="panel">
                 <h2>Personal Information</h2>
-                <div className="grid grid-cols-2 gap-5">
+                <div className="registration-fields grid grid-cols-2 gap-5">
                   <label className="label col-span-2">
                     Full name *
                     <input
@@ -230,7 +230,7 @@ export function PatientRegistrationPage({
               </section>
               <section className="panel">
                 <h2>Address</h2>
-                <div className="grid grid-cols-2 gap-5">
+                <div className="registration-fields grid grid-cols-2 gap-5">
                   {(["street", "city", "state", "zip"] as const).map((key) => (
                     <label
                       className={`label ${key === "street" || key === "zip" ? "col-span-2" : ""}`}

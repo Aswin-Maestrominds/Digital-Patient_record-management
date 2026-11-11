@@ -75,7 +75,7 @@ export function TopNavbar({
   );
 
   return (
-    <header className="h-[88px] bg-white border-b border-slate-200 px-3 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-20 gap-4">
+    <header className="workspace-header h-[88px] bg-white border-b border-slate-200 px-3 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-20 gap-4">
       <button
         aria-label="Open navigation menu"
 
@@ -86,14 +86,14 @@ export function TopNavbar({
         <Menu size={20} />
       </button>
 
-      <div className="mr-auto shrink-0">
-        <p className="text-xs text-slate-500">
+      <div className="header-title mr-auto min-w-0">
+        <p className="text-xs text-slate-500 truncate">
           {["audit", "settings", "users"].includes(currentPage)
             ? "Administration"
             : "Workspace"}{" "}
           / {title}
         </p>
-        <p className="text-base font-semibold">{title}</p>
+        <p className="text-base font-semibold truncate">{title}</p>
       </div>
 
       <div
@@ -193,7 +193,7 @@ export function TopNavbar({
           <Bell size={19} strokeWidth={1.4} />
         </button>
         {showNotifications && (
-          <section className="absolute right-0 top-12 w-80 max-w-[85vw] panel p-4 shadow-lg">
+          <section className="notification-popover absolute right-0 top-12 w-80 max-w-[85vw] panel p-4 shadow-lg">
             <h2 className="font-semibold mb-3">Notifications</h2>
             {notifications.loading ? (
               <p className="text-sm">Loading...</p>
@@ -219,7 +219,7 @@ export function TopNavbar({
       </div>
 
       <button
-        className="flex items-center gap-6 text-left"
+        className="header-account flex items-center gap-6 text-left shrink-0"
         onClick={() => onNavigate("settings")}
         aria-label="Account settings"
       >
@@ -234,7 +234,7 @@ export function TopNavbar({
             initials(currentUser!.name)
           )}
         </span>
-        <ChevronDown size={14} className="text-slate-500" />
+        <ChevronDown size={14} className="hidden sm:block text-slate-500" />
       </button>
     </header>
   );

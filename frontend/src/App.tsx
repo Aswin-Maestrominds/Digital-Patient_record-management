@@ -94,7 +94,7 @@ const Workspace: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="app-shell min-h-screen bg-slate-50 flex">
       {/* Sidebar (Docked on desktop/laptop, off-canvas drawer on mobile/tablet) */}
 
       <Sidebar
@@ -109,7 +109,7 @@ const Workspace: React.FC = () => {
 
       {/* Main Content Area */}
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+      <div className="workspace-content flex-1 flex flex-col min-w-0">
         <TopNavbar
           currentPage={currentPage}
 
@@ -118,7 +118,7 @@ const Workspace: React.FC = () => {
           onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
-        <main className="flex-1 pb-16 px-3 sm:px-6 lg:px-8 max-w-full">
+        <main className="workspace-main flex-1 pb-16 px-3 sm:px-6 lg:px-8 max-w-full min-w-0">
           <ErrorNotice message={error} />
 
           {currentPage === "dashboard" && (

@@ -192,7 +192,7 @@ export function AuditLogsPage(_props: {
         <EmptyState>No audit events match these filters.</EmptyState>
       ) : (
         <>
-          <div className="panel overflow-x-auto">
+          <div role="region" aria-label="Audit events" tabIndex={0} className="table-scroll panel overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50 text-xs text-slate-400 uppercase">
                 <tr>

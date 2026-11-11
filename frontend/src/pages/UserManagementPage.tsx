@@ -196,7 +196,7 @@ export function UserManagementPage() {
         <ErrorNotice message={result.error} onRetry={result.reload} />
       ) : (
         <>
-          <div className="panel overflow-x-auto">
+          <div role="region" aria-label="Workspace users" tabIndex={0} className="table-scroll panel overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-slate-50">
                 <tr>

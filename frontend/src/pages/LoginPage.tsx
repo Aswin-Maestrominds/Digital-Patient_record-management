@@ -114,7 +114,7 @@ export function LoginPage() {
         </div>
       </aside>
 
-      <div className="login-form">
+      <div className="login-form"><img className="mobile-login-logo" src={logo} alt="ARVI Healthcare Intelligence" />
         <p className="text-xs text-blue-500 font-semibold mb-2">
           ARVI HEALTHCARE INTELLIGENCE
         </p>

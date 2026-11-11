@@ -153,8 +153,8 @@ export function PatientRecordDetailPage({
   return (
     <div className="page">
       <div className="panel overflow-hidden">
-        <div className="p-6 flex flex-wrap justify-between items-center gap-5">
-          <div className="flex items-center gap-5">
+        <div className="patient-profile-header p-6 flex flex-wrap justify-between items-center gap-5">
+          <div className="patient-profile-identity flex items-center gap-5 min-w-0">
             <span className="avatar !w-[72px] !h-[72px] !text-2xl">
               {initials(patient.name)}
             </span>
@@ -175,7 +175,7 @@ export function PatientRecordDetailPage({
               </p>
             </div>
           </div>
-          <div className="flex gap-4">
+          <div className="patient-profile-actions flex flex-wrap gap-4">
             <button className="btn-secondary" onClick={() => setEditing(true)}>
               <Pencil size={16} className="text-blue-500" />
               Edit Profile

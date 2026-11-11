@@ -245,7 +245,7 @@ export function DocumentList({
         ) : (
           <>
             <div className="panel overflow-x-auto">
-              <table className="block sm:table w-full text-left text-sm">
+              <table className="document-table block sm:table w-full text-left text-sm">
                 <thead className="hidden sm:table-header-group bg-slate-50 text-xs text-slate-400 uppercase">
                   <tr>
                     {[
@@ -311,13 +311,13 @@ export function DocumentList({
                       </td>
 
                       {!patientId && (
-                        <td className="p-4">
+                        <td data-label="Patient" className="p-4">
                           {document.patientName ?? "Not recorded"}
                         </td>
                       )}
 
                       {!patientId && (
-                        <td className="p-4 col-span-2 sm:table-cell">
+                        <td data-label="Patient ID" className="p-4 col-span-2 sm:table-cell">
                           <button
                             className="text-blue-600 font-mono text-xs"
 
@@ -330,7 +330,7 @@ export function DocumentList({
                         </td>
                       )}
 
-                      <td className="p-4">{document.category}</td>
+                      <td data-label="Category" className="p-4">{document.category}</td>
 
                       <td className="p-4 whitespace-nowrap">
                         <span className="block sm:hidden text-xs text-slate-400 mb-1">
@@ -348,14 +348,14 @@ export function DocumentList({
                         {dateLabel(document.uploadedAt)}
                       </td>
 
-                      <td className="p-4">
+                      <td data-label="File type" className="p-4">
                         {document.mimeType === "application/pdf"
                           ? "PDF"
                           : document.mimeType === "image/png"
                             ? "PNG"
                             : "JPEG"}
                       </td>
-                      <td className="p-4">
+                      <td data-label="Uploaded by" className="p-4">
                         {document.uploadedBy ?? "Not recorded"}
                       </td>
 

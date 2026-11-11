@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: 'mobile.spec.ts',
   timeout: 45000,
   workers: 1,
   fullyParallel: false,

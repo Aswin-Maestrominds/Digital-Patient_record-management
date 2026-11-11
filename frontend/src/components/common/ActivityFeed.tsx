@@ -38,7 +38,7 @@ export function ActivityFeed({
         return (
           <div
             key={event._id}
-            className={`flex gap-4 py-3 ${compact ? "" : "items-center"}`}
+            className={`activity-row flex gap-4 py-3 ${compact ? "" : "items-center"}`}
           >
             <span className="bg-slate-50 text-blue-500 p-2.5 rounded-lg self-start">
               <Icon size={18} strokeWidth={1.5} />
